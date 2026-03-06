@@ -1,4 +1,5 @@
 ## Méthode de Lattice Boltzmann (2D)
+
 # Code fourni
 #Site d'origine : https://readmedium.com/create-your-own-lattice-boltzmann-simulation-with-python-8759e8b53b1c
 
