@@ -94,3 +94,4 @@ for it in range(Nt):
       plt.pause(0.005)
       plt.cla()
 
+
