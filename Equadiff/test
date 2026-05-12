@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Mar 15 17:36:21 2026
-
-@author: elino
-"""
-
 ##importations de bibliothèques
 import sympy as sp
 from sympy.matrices import Matrix
@@ -113,43 +106,29 @@ D = Delta0.subs({ f_psi:psi ,f_theta:theta ,f_phi:phi,
                  f_psi.diff(t):dpsi , f_theta.diff(t):dtheta , f_phi.diff(t):dphi,
                  f_psi.diff(t,2):ddpsi , f_theta.diff(t,2):ddtheta, f_phi.diff(t,2):ddphi})
 d = list(D)
-dx0, dy0, dz0 = D[0],D[1],D[2] #coordonnées du moment d'inertie explicite dans la base 0
-
-### calcul des équations où interviennent des dérivées secondes 
-# afin d'avoir un système linéaire 6 équations 6 inconnues en comptant les dérivées premières connues
-
-vitesse_carre = dx**2 + dy**2 + dz**2
-Fx = sp.Rational(1,2)*rho*S*Cx*vitesse_carre
-Fz = sp.Rational(1,2)*rho*S*Cz*vitesse_carre
-
-acc = (1/m)*(-m*g*z0 -Fx*u + Fz*w)
-ddx,ddy,ddz = acc #expression explicite de l'accéleration 
-
-### résolution du système linaire pour trouver les dérivées secondes angulaires explicitement
-eqx = sp.Eq(Fz*a*vsx0, dx0)
-eqy = sp.Eq(Fz*a*vsy0, dy0)
-eqz = sp.Eq(Fz*a*vsz0, dz0)
 
 
-sol = list(sp.linsolve([eqx,eqy,eqz],(ddpsi,ddtheta,ddphi)))
-print(sol)
-ddpsi_expr, ddtheta_expr, ddphi_expr = sol[0], sol[1], sol[2]
+### test matrice de changement de base
+u_1 = u.subs({ f_psi:0 ,f_theta:theta ,f_phi:0})
+v_1 = v.subs({ f_psi:0 ,f_theta:theta ,f_phi:0})
+w_1 = w.subs({ f_psi:0 ,f_theta:theta ,f_phi:0})
 
-### problème de Cauchy
+sp.pprint(u_1)
+sp.pprint(v_1)
+sp.pprint(w_1)
 
-F = sp.Matrix([dx,dy,dz,dpsi,dtheta,dphi,
-               ddx,ddy,ddz,ddpsi_expr,ddtheta_expr,ddphi_expr ]) #vecteur d'état (en symbolique)
+x0_plan = [x0[0],x0[2]]
+y0_plan = [y0[0],y0[2]]
+u_plan = Matrix([u_1[0],u_1[2]])
+v_plan = Matrix([v_1[0],v_1[2]])
 
-F_numpy = sp.lambdify((x,y,z,psi,theta,phi,
-                       dx,dy,dz,dpsi,dtheta,dphi),F,"numpy") #pour améliorer la rapidité on repasse dans numpy (à éclaircir)
+u_plan_1 = u_plan.subs({theta:pi/6})
+v_plan_1 = v_plan.subs({theta:pi/6})
 
-# résolution numérique de l'équa diff
-def f(Y,t):
-    return np.array(F_numpy(*Y),dtype=float).flatten()
+u_tr = array([[0,0],array(u_plan_1)])
+v_tr = array([[0,0],array(v_plan_1)])
 
-def Euler(f,Y0,dt,n):  # ou autre fonction plus performante éventuellement 
-    Y = np.zeros((len(Y0),n))
-    Y[:,0] = Y0
-    for i in range(n-1):
-        Y[:,i+1] = Y[:,i] + dt*f(Y[:,i],0)
-    return Y
+plot(*u_tr.T,'r')
+plot(*v_tr.T,'b')
+show()
+
