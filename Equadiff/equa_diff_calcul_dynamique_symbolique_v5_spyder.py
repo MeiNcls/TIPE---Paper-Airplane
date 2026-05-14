@@ -8,32 +8,50 @@ Created on Sun Mar 15 17:36:21 2026
 ##importations de bibliothèques
 import sympy as sp
 from sympy.matrices import Matrix
+from sympy.matrices import MatrixBase
+from scipy.integrate import solve_ivp
 from pylab import *
 
 
-### constantes
-g = 9.81 #pesanteur
-a = 2e-2 #m
-#base liée au sol
-x0 = Matrix([[1,0,0]])
-y0 = Matrix([[0,1,0]])
-z0 = Matrix([[0,0,1]])
+### constantes numériques
 
+dtr = pi/180
+g = 9.81 #m/s**2
 rho = 1.2 #kg/m3
+
+#géométrie
+a = 2e-2 #m
+l= 10e-2 #m
+L = 7.5e-2 #m
+alpha = 20*dtr #rad
 S = 50e-4 #m2
+m = 5e-3 #kg
+[A1_num,B1_num,C1_num,D1_num,E1_num,F1_num] = [1e-5,1e-5,1e-5,0,0,0]
+
+#base liée au sol
+x0 = Matrix(([1,0,0]))
+y0 = Matrix(([0,1,0]))
+z0 = Matrix(([0,0,1]))
+
+#valeurs par défaut, à faire varier ==> hyperparamaètres
 Cx = 0.5 #à changer
 Cz = 0.9 #à changer
-m = 5e-3 #kg
+K = 1e-4 #kg/m
+
+dt = 0.01 #pas de temps de la simulation
+n = 1000*3 #nombres de points de la simulation
+R = 3 #m (rayon d'une boucle)
+d = 4
+v_lin = 2 #m/s
+Y0 = [0,0,0,v_lin,d*v_lin,(v_lin*(1+d**2)**0.5)/R]  #conditions initiales
+
+###symboles sympy
 
 #matrice d'inertie en G dans la base de l'avion
-
-#A1, B1, C1, D1, E1, F1 = (2e-5,2e-5,2e-5,1e-7,0,1e-7) #à changer plus tard
 A1, B1, C1, D1, E1, F1 = sp.symbols("A1, B1, C1, D1, E1, F1")
 I = Matrix([[A1,-F1,-E1],
           [-F1,B1,-D1],
           [-E1,-D1,C1]])
-
-####
 
 #symbols (variables)
 x,y,z,t = sp.symbols("x y z t")
@@ -49,12 +67,6 @@ f_phi = sp.Function('phi')(t)
 f_theta = sp.Function('theta')(t)
 
 
-#vecteur d'état (il ne sert à rien là on est d'accord)
-Y = [x,y,z,
- psi,theta,phi,
- dx,dy,dz,
- dpsi,dtheta,dphi]
-
 
 ### changement de bases
 
@@ -63,30 +75,32 @@ def f_u(psi,theta,phi) :
     a =  Matrix([sp.cos(theta),
                 sp.sin(theta)*sp.cos(psi),
                 sp.sin(theta)*sp.sin(psi)])
-    return a.transpose()
+    return a
 
 def f_v(psi,theta,phi) :
     a = Matrix([-sp.cos(phi)*sp.sin(theta),
                sp.cos(phi)*sp.cos(theta)*sp.cos(psi)-sp.sin(phi)*sp.sin(psi),
                sp.cos(phi)*sp.cos(theta)*sp.sin(psi)+sp.sin(phi)*sp.cos(psi)])
-    return a.transpose()
+    return a
 
 def f_w(psi,theta,phi) :
     a = Matrix([sp.sin(phi)*sp.sin(theta),
                -sp.cos(phi)*sp.sin(psi)-sp.sin(phi)*sp.cos(theta)*sp.cos(psi),
                sp.cos(phi)*sp.cos(psi)-sp.sin(phi)*sp.cos(theta)*sp.sin(psi)])
-    return a.transpose()
+    return a
 
 #vecteur rotation
 def f_omega(psi,theta,phi) : # vecteur rotation de l'avion dans la base B de l'avion
     o = Matrix([phi.diff(t)+psi.diff(t)*sp.cos(theta),
                theta.diff(t)*sp.sin(phi)-psi.diff(t)*sp.sin(theta)*sp.cos(phi),
                theta.diff(t)*sp.cos(phi) + psi.diff(t)*sp.sin(theta)*sp.sin(phi)])
-    return o #pourquoi n'y a-t-il pas de transposée ici ?
+    return o 
 
 
 OmegaB = f_omega(f_psi,f_theta,f_phi) #vecteur rotation
 u,v,w = f_u(f_psi,f_theta,f_phi), f_v(f_psi,f_theta,f_phi), f_w(f_psi,f_theta,f_phi) #base de l'avion
+u1 = cos(alpha)*u + sin(alpha)*v #directions des forces des winglets
+u2 = cos(alpha)*u - sin(alpha)*v
 
 ### calcul explicite du moment d'inertie en G dans la base 0
 
@@ -105,35 +119,68 @@ wsz0 = w.dot(z0)
 Deltax0 = X.diff(t)*usx0 + Y.diff(t)*vsx0 + Z.diff(t)*wsx0 + X*usx0.diff(t) + Y*vsx0.diff(t) + Z*wsx0.diff(t)
 Deltay0 = X.diff(t)*usy0 + Y.diff(t)*vsy0 + Z.diff(t)*wsy0 + X*usy0.diff(t) + Y*vsy0.diff(t) + Z*wsy0.diff(t)
 Deltaz0 = X.diff(t)*usz0 + Y.diff(t)*vsz0 + Z.diff(t)*wsz0 + X*usz0.diff(t) + Y*vsz0.diff(t) + Z*wsz0.diff(t)
-Delta0 = Matrix([[Deltax0,Deltay0,Deltaz0]]).T
+Delta0 = Matrix(([Deltax0,Deltay0,Deltaz0]))
 
 ### on remplace les dérivées et les fonctions par des variables indépendantes pour pouvoir faire une résolution de système linéaire
 
 D = Delta0.subs({ f_psi:psi ,f_theta:theta ,f_phi:phi, 
                  f_psi.diff(t):dpsi , f_theta.diff(t):dtheta , f_phi.diff(t):dphi,
-                 f_psi.diff(t,2):ddpsi , f_theta.diff(t,2):ddtheta, f_phi.diff(t,2):ddphi})
-d = list(D)
+                 f_psi.diff(t,2):ddpsi , f_theta.diff(t,2):ddtheta, f_phi.diff(t,2):ddphi,
+                 A1 : A1_num, B1: B1_num, C1: C1_num, D1 : D1_num, E1: E1_num, F1: F1_num})
 dx0, dy0, dz0 = D[0],D[1],D[2] #coordonnées du moment d'inertie explicite dans la base 0
 
 ### calcul des équations où interviennent des dérivées secondes 
 # afin d'avoir un système linéaire 6 équations 6 inconnues en comptant les dérivées premières connues
 
-vitesse_carre = dx**2 + dy**2 + dz**2
+IG = -L*v-l*u
+JG = L*v - l*u
+vI = dx*x0 + dy*y0 + (OmegaB.cross(IG))
+vJ = dx*x0 + dy*y0 + (OmegaB.cross(JG))
+n_vI = vI.norm()
+n_vJ = vJ.norm()
+
+#portance, trainée
+vitesse_carre = dx**2 + dy**2 
 Fx = sp.Rational(1,2)*rho*S*Cx*vitesse_carre
 Fz = sp.Rational(1,2)*rho*S*Cz*vitesse_carre
 
-acc = (1/m)*(-m*g*z0 -Fx*u + Fz*w)
-ddx,ddy,ddz = acc #expression explicite de l'accéleration 
+#forces winglets
+Fwd = K*(n_vI**2)*u1
+Fwg = K*(n_vJ**2)*u2
+
+acc_f = (1/m)*(-m*g*z0 -Fx*u + Fz*w) #expression explicite de l'accéleration 
+### là aussi il faut résoudre un système nan ????? oskour, ducoup faut faire un sytsème 3x3 pour integrer Fwd et Fwg
+#au pire en première approximation on dit que les forces sont négligeables et c'est le moment qui compte ? 
+
+acc_int = acc_f.subs({ f_psi:psi ,f_theta:theta ,f_phi:phi, 
+                      f_psi.diff(t):dpsi , f_theta.diff(t):dtheta , f_phi.diff(t):dphi,
+                      f_psi.diff(t,2):ddpsi , f_theta.diff(t,2):ddtheta, f_phi.diff(t,2):ddphi})
+ddx,ddy,ddz = acc_int[0],acc_int[1],acc_int[2] #expression explicite de l'accéleration 
 
 ### résolution du système linaire pour trouver les dérivées secondes angulaires explicitement
-eqx = sp.Eq(Fz*a*vsx0, dx0)
-eqy = sp.Eq(Fz*a*vsy0, dy0)
-eqz = sp.Eq(Fz*a*vsz0, dz0)
+#moments
+Mair = Fx*a*v
+Mwd = Fwd.cross(IG)
+Mwg = Fwg.cross(JG)
 
+M_f = Mair + Mwd + Mwg 
+M = M_f.subs({ f_psi:psi ,f_theta:theta ,f_phi:phi, 
+              f_psi.diff(t):dpsi , f_theta.diff(t):dtheta , f_phi.diff(t):dphi,
+              f_psi.diff(t,2):ddpsi , f_theta.diff(t,2):ddtheta, f_phi.diff(t,2):ddphi})
 
-sol = list(sp.linsolve([eqx,eqy,eqz],(ddpsi,ddtheta,ddphi)))
+Mx = M.dot(x0) #vérifier que on récupère bien ce qu'on veut
+My = M.dot(y0)
+Mz = M.dot(z0)
+
+#equations à résoudre
+eqx = sp.Eq(Mx, dx0)
+eqy = sp.Eq(My, dy0)
+eqz = sp.Eq(Mz, dz0)
+
+#résolution
+sol = list(sp.linsolve([eqx,eqy,eqz],(ddpsi,ddtheta,ddphi))) #est-ce bien linéaire ? 
 print(sol)
-ddpsi_expr, ddtheta_expr, ddphi_expr = sol[0], sol[1], sol[2]
+ddpsi_expr, ddtheta_expr, ddphi_expr = sol[0][0], sol[0][1], sol[0][2]
 
 ### problème de Cauchy
 
@@ -141,15 +188,19 @@ F = sp.Matrix([dx,dy,dz,dpsi,dtheta,dphi,
                ddx,ddy,ddz,ddpsi_expr,ddtheta_expr,ddphi_expr ]) #vecteur d'état (en symbolique)
 
 F_numpy = sp.lambdify((x,y,z,psi,theta,phi,
-                       dx,dy,dz,dpsi,dtheta,dphi),F,"numpy") #pour améliorer la rapidité on repasse dans numpy (à éclaircir)
+                       dx,dy,dz,dpsi,dtheta,dphi),F,"numpy") #pour améliorer la rapidité on transforme F en fonction numpy
 
 # résolution numérique de l'équa diff
 def f(Y,t):
     return np.array(F_numpy(*Y),dtype=float).flatten()
 
-def Euler(f,Y0,dt,n):  # ou autre fonction plus performante éventuellement 
-    Y = np.zeros((len(Y0),n))
-    Y[:,0] = Y0
-    for i in range(n-1):
-        Y[:,i+1] = Y[:,i] + dt*f(Y[:,i],0)
-    return Y
+sol = solve_ivp(lambda t, Y : f(Y,t),[0,n*dt],Y0,t_eval = np.linspace(0,n*dt,n))
+Y = sol.y
+x_tab, y_tab = Y[0,:], Y[1,:]
+close(1)
+figure(1)
+plot(x_tab,y_tab)
+title("trajectoire plane mais modèle 3D")
+xlabel("x(m)")
+ylabel("y(m)")
+show()
