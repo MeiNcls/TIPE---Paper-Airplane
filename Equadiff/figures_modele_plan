@@ -33,22 +33,24 @@ y0 = Matrix(([0,1,0]))
 z0 = Matrix(([0,0,1]))
 
 #valeurs par défaut, à faire varier ==> hyperparamaètres
-Cx = 0.5 #à changer
-Cz = 0.9 #à changer
-K = 1e-4 #kg/m
-Y0 = [0,0,0,2,0.5,1] #conditions initiales
+Cx = 0.4 #à changer
+Cz = 0.8 #à changer
+K = 1e-3 #kg/m
+#Y0 = [0,0,0,2,0.5,2] #conditions initiales
 dt = 0.01 #pas de temps de la simulation
-n = 1000*3 #nombres de points de la simulation
-R = 3 #m (rayon d'une boucle)
-d = 4
+n = 1000*2 #nombres de points de la simulation
+R = 4 #m (rayon d'une boucle)
+d = 2
 v_lin = 2 #m/s
 
 #variation des hyperparamètres :
-tab_K = [1e-6,1e-5,1e-4,1e-3,1e-2,1e-1,1]
+tab_K = [1e-6,1e-5,1e-4,1e-3,1e-1,1]
 #tab_d = [0,0.3,0.6,0.9,1.2,1.8,2.4,3]
 #tab_d = [0,0.5,1,1.5,2,2.5,3,3.5,4]
 tab_d = [x for x in range (-5,7,2)]
-tab_Cx = [0.2,0.3,0.4,0.6,0.8,1.2]
+tab_Cx = [0.2,0.3,0.4,0.6,0.8,1.4]
+tab_Cz = [0.3,0.7,1,1.5,2,2.5]
+tab_R = [0.01,0.1,1,5,10,20]
 
 
 #couleur_d = ['cyan','lightskyblue','deepskyblue','dodgerblue','mediumblue','darkblue','indigo','rebeccapurple','purple','darkmagenta','darkviolet']
@@ -57,6 +59,9 @@ tab_Cx = [0.2,0.3,0.4,0.6,0.8,1.2]
 couleur = ['gold','orange','orangered','red','darkred','mediumvioletred','fuchsia','blueviolet','dodgerblue','cyan']
 couleur_d = ['gold','orangered','darkred','mediumvioletred','blueviolet','dodgerblue']
 couleur_Cx = ['orange','red','darkred','fuchsia','blueviolet','cyan']
+couleur_K = ['gold','orangered','darkred','mediumvioletred','dodgerblue','cyan']
+couleur_Cz = ['orange','red','darkred','fuchsia','blueviolet','cyan']
+couleur_R = ['orange','red','darkred','fuchsia','blueviolet','cyan']
 
 #matrice d'inertie en G dans la base de l'avion
 
@@ -164,9 +169,13 @@ n_vJ = vJ.norm()
 ###variation des hyperparamètres
 
 #variation de K
+
+#pour générer la figure avec les variations de K
 """
-pour générer la figure avec les variations de K
-for K in tab_K :  
+for i in range (len(tab_K)) : 
+    K = tab_K[i]
+    couleur = couleur_K[i] 
+    Y0 = [0,0,0,v_lin,d*v_lin,(v_lin*(1+d**2)**0.5)/R]
 
     #portance, trainée
     vitesse_carre = dx**2 + dy**2 
@@ -222,16 +231,19 @@ for K in tab_K :
     sol = solve_ivp(lambda t, Y : f(Y,t),[0,n*dt],Y0,t_eval = np.linspace(0,n*dt,n))
     Y = sol.y
     x_tab, y_tab = Y[0,:], Y[1,:]
-    plot(x_tab,y_tab, label = f"K = {K}kg/m")
+    plot(x_tab,y_tab, couleur ,label = f"K = {K}kg/m")
     
-title("trajectoire plane")
-suptitle(f'Cx = {Cx}, Cz = {Cz}, Y0 = {Y0} USI')
-axis("equal")
+title("trajectoire plane", fontsize = 20, x = 0.12, y = 1.03 )
+suptitle(f'Cx = {Cx}, Cz = {Cz} \n' f'Y0 = [0,0,0,{v_lin},{d*v_lin},{(v_lin*(1+d**2)**0.5)/R:.2e}] USI', fontsize = 10,x = 0.7, y = 0.96 )
 xlabel("x(m)")
 ylabel("y(m)")
+axis("equal")
+#xlim(-20,20)
+#ylim(-20,20)
 legend()
-show()*
+show()
 """
+
 # variation de d
 """
 for i in range(len(tab_d)) : 
@@ -303,7 +315,9 @@ ylabel("y(m)")
 legend()
 show()
 """
+
 #variations de Cx
+"""
 for i in range(len(tab_Cx)) : 
     Cx = tab_Cx[i]
     Y0 = [0,0,0,v_lin,d*v_lin,(v_lin*(1+d**2)**0.5)/R]
@@ -368,8 +382,200 @@ for i in range(len(tab_Cx)) :
 title("trajectoire plane", fontsize = 20, x = 0.12, y = 1.03 )
 suptitle(f'Cz = {Cz}, vlin = {v_lin} m/s, R = {R}m, K = {K}kg/m, d={d} \n' r'Y0 = [0,0,0,vlin,$d*vlin$,$ \frac{vlin \sqrt{(1+d^2)}}{R} $] USI', fontsize = 8,x = 0.7, y = 0.96 )
 #suptitle( r'Y0 = [0,0,0,vlin,$d*vlin$,$ \frac{vlin \sqrt{(1+d^2)}}{R} $] USI',fontsize = 8,x = 0.7, y = 0.94)
+ylim(-20,20)
 axis("equal")
 xlabel("x(m)")
 ylabel("y(m)")
 legend()
 show()
+"""
+
+#variations de Cz
+ 
+Y0 = [0,0,0,v_lin,d*v_lin,(v_lin*(1+d**2)**0.5)/R]
+
+#portance, trainée
+vitesse_carre = dx**2 + dy**2 
+Fx = sp.Rational(1,2)*rho*S*Cx*vitesse_carre
+Fz = sp.Rational(1,2)*rho*S*Cz*vitesse_carre
+
+#forces winglets
+Fwd = K*(n_vI**2)*u1
+Fwg = K*(n_vJ**2)*u2
+
+acc_f = (1/m)*(-m*g*z0 -Fx*u + Fz*w) #expression explicite de l'accéleration 
+### là aussi il faut résoudre un système nan ????? oskour, ducoup faut faire un sytsème 3x3 pour integrer Fwd et Fwg
+#au pire en première approximation on dit que les forces sont négligeables et c'est le moment qui compte ? 
+
+acc_int = acc_f.subs({ f_psi:0 ,f_theta:theta ,f_phi:0, 
+                f_psi.diff(t):0 , f_theta.diff(t):dtheta , f_phi.diff(t):0,
+                f_psi.diff(t,2):0 , f_theta.diff(t,2):ddtheta, f_phi.diff(t,2):0})
+ddx,ddy,ddz = acc_int[0],acc_int[1],acc_int[2]
+
+### résolution du système linaire pour trouver les dérivées secondes angulaires explicitement
+
+#moments 
+Mair = Fx*a*v
+Mwd = Fwd.cross(IG)
+Mwg = Fwg.cross(JG)
+
+Mz_f = Mair.dot(z0) + Mwd.dot(z0) + Mwg.dot(z0)
+Mz = Mz_f.subs({ f_psi:0 ,f_theta:theta ,f_phi:0, 
+                f_psi.diff(t):0 , f_theta.diff(t):dtheta , f_phi.diff(t):0,
+                f_psi.diff(t,2):0 , f_theta.diff(t,2):ddtheta, f_phi.diff(t,2):0})
+
+eqz = sp.Eq(Mz, dz0)
+#sp.pprint(eqz)
+
+sol = list(sp.linsolve([eqz],ddtheta))
+ddtheta_expr = sol[0][0]
+#print(ddtheta_expr)
+
+### problème de Cauchy
+
+F = sp.Matrix([dx,dy,dtheta,
+            ddx,ddy,ddtheta_expr]) #vecteur d'état (en symbolique)
+print(type(ddx),type(dtheta),type(ddtheta))
+
+F_numpy = sp.lambdify((x,y,theta,
+                    dx,dy,dtheta),F,"numpy") #pour améliorer la rapidité on transforme F en fonction numpy
+
+# résolution numérique de l'équa diff
+def f(Y,t):
+    return np.array(F_numpy(*Y),dtype=float).flatten()
+
+
+sol = solve_ivp(lambda t, Y : f(Y,t),[0,n*dt],Y0,t_eval = np.linspace(0,n*dt,n))
+t_tab = sol.t
+Y = sol.y
+x_tab, y_tab, theta_tab, dx_tab,dy_tab, dtheta_tab = Y[0,:], Y[1,:], Y[2,:], Y[3,:], Y[4,:], Y[5,:]
+fig, ax = subplots(3,3)
+ax[0,0].plot(x_tab,y_tab)
+ax[0,0].set_title('trajectoire')
+ax[0,0].set_xlabel('x(m)')
+ax[0,0].set_ylabel('y(m)')
+
+ax[0,1].plot(theta_tab,dtheta_tab)
+ax[0,1].set_title('portrait de phase angluaire')
+ax[0,1].set_xlabel(r'$\theta$ (rad)')
+ax[0,1].set_ylabel(r'$\dot{\theta}$ (rad/s)')
+
+ax[0,2].axis('off')
+
+ax[1,0].plot(t_tab,x_tab)
+ax[1,0].set_title('x en fonction du temps')
+ax[1,0].set_xlabel('t(s)')
+ax[1,0].set_ylabel('x(m)')
+
+ax[1,1].plot(t_tab,y_tab)
+ax[1,1].set_title('y en fonction du temps')
+ax[1,1].set_xlabel('t(s)')
+ax[1,1].set_ylabel('y(m)')
+
+ax[1,2].plot(t_tab,theta_tab)
+ax[1,2].set_title(r'$\theta$ en fonction du temps')
+ax[1,2].set_xlabel('t(s)')
+ax[1,2].set_ylabel(r'$\theta$ (rad)')
+
+ax[2,0].plot(t_tab,dx_tab)
+ax[2,0].set_title(r'$\dot{x}$ en fonction du temps')
+ax[2,0].set_xlabel('t(s)')
+ax[2,0].set_ylabel(r'$\dot{x}$(m/s)')
+
+ax[2,1].plot(t_tab,dy_tab)
+ax[2,1].set_title(r'$\dot{y}$ en fonction du temps')
+ax[2,1].set_xlabel('t(s)')
+ax[2,1].set_ylabel(r'$\dot{y}$(m/s)')
+
+ax[2,2].plot(t_tab,dtheta_tab)
+ax[2,2].set_title(r'$\dot{\theta}$ en fonction du temps')
+ax[2,2].set_xlabel('t(s)')
+ax[2,2].set_ylabel(r'$\dot{\theta}$ (rad/s)')
+
+
+tight_layout()
+
+
+
+#plot(x_tab,y_tab,'orange', label = f"Cz = {Cz}") 
+#title("trajectoire plane", fontsize = 20, x = 0.12, y = 1.03 )
+suptitle(f'Cx = {Cx}, Cz = {Cz}, K = {K}kg/m \n' f'Y0 = [0,0,0,{v_lin},{d*v_lin},{(v_lin*(1+d**2)**0.5)/R:.2e}] USI' ,x = 0.85, y =0.85)
+#suptitle( r'Y0 = [0,0,0,vlin,$d*vlin$,$ \frac{vlin \sqrt{(1+d^2)}}{R} $] USI',fontsize = 8,x = 0.7, y = 0.94)
+#axis("equal")
+#xlabel("x(m)")
+#ylabel("y(m)")
+#legend()
+show()
+
+
+#variations R
+"""
+for i in range(len(tab_d)) : 
+    R = tab_R[i]
+    Y0 = [0,0,0,v_lin,d*v_lin,(v_lin*(1+d**2)**0.5)/R]
+
+    #portance, trainée
+    vitesse_carre = dx**2 + dy**2 
+    Fx = sp.Rational(1,2)*rho*S*Cx*vitesse_carre
+    Fz = sp.Rational(1,2)*rho*S*Cz*vitesse_carre
+
+    #forces winglets
+    Fwd = K*(n_vI**2)*u1
+    Fwg = K*(n_vJ**2)*u2
+
+    acc_f = (1/m)*(-m*g*z0 -Fx*u + Fz*w) #expression explicite de l'accéleration 
+    ### là aussi il faut résoudre un système nan ????? oskour, ducoup faut faire un sytsème 3x3 pour integrer Fwd et Fwg
+    #au pire en première approximation on dit que les forces sont négligeables et c'est le moment qui compte ? 
+
+    acc_int = acc_f.subs({ f_psi:0 ,f_theta:theta ,f_phi:0, 
+                    f_psi.diff(t):0 , f_theta.diff(t):dtheta , f_phi.diff(t):0,
+                    f_psi.diff(t,2):0 , f_theta.diff(t,2):ddtheta, f_phi.diff(t,2):0})
+    ddx,ddy,ddz = acc_int[0],acc_int[1],acc_int[2]
+
+    ### résolution du système linaire pour trouver les dérivées secondes angulaires explicitement
+
+    #moments 
+    Mair = Fx*a*v
+    Mwd = Fwd.cross(IG)
+    Mwg = Fwg.cross(JG)
+
+    Mz_f = Mair.dot(z0) + Mwd.dot(z0) + Mwg.dot(z0)
+    Mz = Mz_f.subs({ f_psi:0 ,f_theta:theta ,f_phi:0, 
+                    f_psi.diff(t):0 , f_theta.diff(t):dtheta , f_phi.diff(t):0,
+                    f_psi.diff(t,2):0 , f_theta.diff(t,2):ddtheta, f_phi.diff(t,2):0})
+
+    eqz = sp.Eq(Mz, dz0)
+    #sp.pprint(eqz)
+
+    sol = list(sp.linsolve([eqz],ddtheta))
+    ddtheta_expr = sol[0][0]
+    #print(ddtheta_expr)
+
+    ### problème de Cauchy
+
+    F = sp.Matrix([dx,dy,dtheta,
+                ddx,ddy,ddtheta_expr]) #vecteur d'état (en symbolique)
+    print(type(ddx),type(dtheta),type(ddtheta))
+
+    F_numpy = sp.lambdify((x,y,theta,
+                        dx,dy,dtheta),F,"numpy") #pour améliorer la rapidité on transforme F en fonction numpy
+
+    # résolution numérique de l'équa diff
+    def f(Y,t):
+        return np.array(F_numpy(*Y),dtype=float).flatten()
+
+
+    sol = solve_ivp(lambda t, Y : f(Y,t),[0,n*dt],Y0,t_eval = np.linspace(0,n*dt,n))
+    Y = sol.y
+    x_tab, y_tab = Y[0,:], Y[1,:]
+    plot(x_tab,y_tab,couleur_R[i], label = f"R = {R}m")
+
+ 
+title("trajectoire plane", fontsize = 20, x = 0.12, y = 1.03 )
+suptitle(f'Cx = {Cx}, Cz = {Cz}, vlin = {v_lin} m/s, d = {d}, K = {K}kg/m \n' r'Y0 = [0,0,0,vlin,$d*vlin$,$ \frac{vlin \sqrt{(1+d^2)}}{R} $] USI', fontsize = 8,x = 0.7, y = 0.96 )
+axis("equal")
+xlabel("x(m)")
+ylabel("y(m)")
+legend()
+show()
+"""

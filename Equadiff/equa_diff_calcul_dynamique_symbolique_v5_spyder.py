@@ -33,9 +33,9 @@ x0 = Matrix(([1,0,0]))
 y0 = Matrix(([0,1,0]))
 z0 = Matrix(([0,0,1]))
 
-#valeurs par défaut, à faire varier ==> hyperparamaètres
-Cx = 0.5 #à changer
-Cz = 0.9 #à changer
+#valeurs par défaut, hyperparamaètres
+Cx = 0.4
+Cz = 0.8
 K = 1e-4 #kg/m
 
 dt = 0.01 #pas de temps de la simulation
@@ -102,7 +102,7 @@ u,v,w = f_u(f_psi,f_theta,f_phi), f_v(f_psi,f_theta,f_phi), f_w(f_psi,f_theta,f_
 u1 = cos(alpha)*u + sin(alpha)*v #directions des forces des winglets
 u2 = cos(alpha)*u - sin(alpha)*v
 
-### calcul explicite du moment d'inertie en G dans la base 0
+### calcul explicite du moment d'inertie en G dans la base 0 ------------------------------------------------------------------------------------
 
 SigmaB = I*OmegaB
 X,Y,Z = SigmaB[0],SigmaB[1],SigmaB[2] #variables intermédiaires 
@@ -129,7 +129,7 @@ D = Delta0.subs({ f_psi:psi ,f_theta:theta ,f_phi:phi,
                  A1 : A1_num, B1: B1_num, C1: C1_num, D1 : D1_num, E1: E1_num, F1: F1_num})
 dx0, dy0, dz0 = D[0],D[1],D[2] #coordonnées du moment d'inertie explicite dans la base 0
 
-### calcul des équations où interviennent des dérivées secondes 
+### calcul des équations où interviennent des dérivées secondes --------------------------------------------------------------------------------------
 # afin d'avoir un système linéaire 6 équations 6 inconnues en comptant les dérivées premières connues
 
 IG = -L*v-l*u
@@ -149,8 +149,6 @@ Fwd = K*(n_vI**2)*u1
 Fwg = K*(n_vJ**2)*u2
 
 acc_f = (1/m)*(-m*g*z0 -Fx*u + Fz*w) #expression explicite de l'accéleration 
-### là aussi il faut résoudre un système nan ????? oskour, ducoup faut faire un sytsème 3x3 pour integrer Fwd et Fwg
-#au pire en première approximation on dit que les forces sont négligeables et c'est le moment qui compte ? 
 
 acc_int = acc_f.subs({ f_psi:psi ,f_theta:theta ,f_phi:phi, 
                       f_psi.diff(t):dpsi , f_theta.diff(t):dtheta , f_phi.diff(t):dphi,
@@ -168,7 +166,7 @@ M = M_f.subs({ f_psi:psi ,f_theta:theta ,f_phi:phi,
               f_psi.diff(t):dpsi , f_theta.diff(t):dtheta , f_phi.diff(t):dphi,
               f_psi.diff(t,2):ddpsi , f_theta.diff(t,2):ddtheta, f_phi.diff(t,2):ddphi})
 
-Mx = M.dot(x0) #vérifier que on récupère bien ce qu'on veut
+Mx = M.dot(x0)
 My = M.dot(y0)
 Mz = M.dot(z0)
 
@@ -177,7 +175,7 @@ eqx = sp.Eq(Mx, dx0)
 eqy = sp.Eq(My, dy0)
 eqz = sp.Eq(Mz, dz0)
 
-#résolution
+#résolution --------------------------------------------------------------------------------------------------------------------------------------------
 sol = list(sp.linsolve([eqx,eqy,eqz],(ddpsi,ddtheta,ddphi))) #est-ce bien linéaire ? 
 print(sol)
 ddpsi_expr, ddtheta_expr, ddphi_expr = sol[0][0], sol[0][1], sol[0][2]
@@ -194,9 +192,12 @@ F_numpy = sp.lambdify((x,y,z,psi,theta,phi,
 def f(Y,t):
     return np.array(F_numpy(*Y),dtype=float).flatten()
 
+
 sol = solve_ivp(lambda t, Y : f(Y,t),[0,n*dt],Y0,t_eval = np.linspace(0,n*dt,n))
 Y = sol.y
 x_tab, y_tab = Y[0,:], Y[1,:]
+
+#affichage de la trajectoire
 close(1)
 figure(1)
 plot(x_tab,y_tab)

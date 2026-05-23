@@ -71,7 +71,7 @@ for it in range(Nt):
     F[:,:,i] = np.roll(F[:,:,i], cy, axis=0)
 
   # Set reflective boundaries
-  bndryF = F[cylinder,:]
+  bndryF = F[cylinder,:]                       #-------------------------------------------
   bndryF = bndryF[:,[0,5,6,7,8,1,2,3,4]]
 
   # Calculate fluid variables
@@ -87,7 +87,7 @@ for it in range(Nt):
   F += -(1.0/tau) * (F - Feq)
 
   # Apply boundary
-  F[cylinder,:] = bndryF
+  F[cylinder,:] = bndryF                       #-------------------------------------------
 
   if (it%10==0):
       plt.imshow(np.sqrt(ux**2+uy**2))
