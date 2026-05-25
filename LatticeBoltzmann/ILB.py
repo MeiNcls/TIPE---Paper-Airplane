@@ -29,7 +29,7 @@ C=contour(img)
 
 # Simulation parameters
 Nx = 400  # resolution x-dir
-Ny = 100  # resolution y-dir
+Ny = 200  # resolution y-dir
 rho0 = 100  # average density
 tau = 0.6  # collision timescale
 Nt = 4000  # number of timesteps
@@ -57,18 +57,19 @@ for i in idxs:
 # Cylinder boundary
 cylinder2=np.full((Ny,Nx),False)
 
-for i in range(Ny):
+for i in range(100):
     for j in range(Nx):
         if C[i][j]==0:
-            cylinder2[i][j]=True
+            cylinder2[i+50][j]=True
 
 # Prep figure
 fig = plt.figure(figsize=(4, 2), dpi=80)
 
 # Simulation Main Loop
 for it in range(Nt):
-    print(it)
-
+    #print(it)
+    F[:,-1,[6,7,8]]=F[:,-2,[6,7,8]]
+    F[:,0,[2,3,4]]=F[:,1,[2,3,4]]
     # Drift
     for i, cx, cy in zip(idxs, cxs, cys):
         F[:, :, i] = np.roll(F[:, :, i], cx, axis=1)
@@ -98,7 +99,7 @@ for it in range(Nt):
     F[cylinder2, :] = bndryF
 
     # plot in real time - color 1/2 particles blue, other half red
-    if (plotRealTime and (it % 10) == 0) or (it == Nt - 1):
+    if (plotRealTime and (it % 20) == 0) or (it == Nt - 1):
         plt.cla()
         ux[cylinder2] = 0
         uy[cylinder2] = 0
@@ -107,11 +108,11 @@ for it in range(Nt):
         )
         vorticity[cylinder2] = np.nan
         vorticity = np.ma.array(vorticity, mask=cylinder2)
-        plt.imshow(vorticity, cmap="bwr")
-        plt.imshow(~cylinder2, cmap="gray", alpha=0.3)
+        plt.imshow(vorticity,cmap="bwr")
+        plt.imshow(~cylinder2, cmap="grey", alpha=0.3)
         plt.clim(-0.1, 0.1)
         ax = plt.gca()
-        ax.invert_yaxis()
+        #ax.invert_yaxis()
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
         ax.set_aspect("equal")
