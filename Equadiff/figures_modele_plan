@@ -456,7 +456,7 @@ ax[0,0].set_xlabel('x(m)')
 ax[0,0].set_ylabel('y(m)')
 
 ax[0,1].plot(theta_tab,dtheta_tab)
-ax[0,1].set_title('portrait de phase angluaire')
+ax[0,1].set_title('portrait de phase angulaire')
 ax[0,1].set_xlabel(r'$\theta$ (rad)')
 ax[0,1].set_ylabel(r'$\dot{\theta}$ (rad/s)')
 
