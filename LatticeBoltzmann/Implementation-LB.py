@@ -59,7 +59,7 @@ for i in range(Ny):
             cylinder2[i][j]=True
 
 
-cylinder = (X - Nx/4)**2 + (Y - Ny/2)**2 < (Ny/4)**2
+#cylinder = (X - Nx/4)**2 + (Y - Ny/2)**2 < (Ny/4)**2
 
 
 # Simulation Main Loop
@@ -71,14 +71,18 @@ for it in range(Nt):
     F[:,:,i] = np.roll(F[:,:,i], cy, axis=0)
 
   # Set reflective boundaries
-  bndryF = F[cylinder,:]
+  bndryF = F[cylinder2,:]
   bndryF = bndryF[:,[0,5,6,7,8,1,2,3,4]]
 
   # Calculate fluid variables
   rho = np.sum(F,2)
   ux  = np.sum(F*cxs,2) / rho
   uy  = np.sum(F*cys,2) / rho
-
+  # Apply boundary
+  F[cylinder2,:] = bndryF
+  ux[cylinder2] = 0
+  uy[cylinder2] = 0
+  
   # Apply Collision
   Feq = np.zeros(F.shape)
   for i, cx, cy, w in zip(idxs, cxs, cys, weights):
@@ -86,12 +90,29 @@ for it in range(Nt):
 
   F += -(1.0/tau) * (F - Feq)
 
-  # Apply boundary
-  F[cylinder,:] = bndryF
+  
 
-  if (it%10==0):
-      plt.imshow(np.sqrt(ux**2+uy**2))
-      plt.pause(0.005)
-      plt.cla()
+  if (plotRealTime and (it % 10) == 0) or (it == Nt - 1):
+            plt.cla()
+            ux[cylinder2] = 0
+            uy[cylinder2] = 0
+            vorticity = (np.roll(ux, -1, axis=0) - np.roll(ux, 1, axis=0)) - (
+                np.roll(uy, -1, axis=1) - np.roll(uy, 1, axis=1)
+            )
+            vorticity[cylinder2] = np.nan
+            vorticity = np.ma.array(vorticity, mask=cylinder2)
+            plt.imshow(vorticity, cmap="bwr")
+            plt.imshow(~cylinder2, cmap="gray", alpha=0.3)
+            plt.clim(-0.1, 0.1)
+            ax = plt.gca()
+            ax.invert_yaxis()
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+            ax.set_aspect("equal")
+            plt.pause(0.001)
+
+    # Save figure
+    plt.savefig("latticeboltzmann.png", dpi=240)
+    plt.show()
 
 
