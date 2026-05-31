@@ -1,0 +1,148 @@
+from pylab import *
+from scipy.integrate import solve_ivp
+
+dtr = pi/180
+g = 9.81 #m/s**2
+rho = 1.2 #kg/m3
+
+#géométrie
+a = 2e-2 #m
+l= 10e-2 #m
+L = 7.5e-2 #m
+alpha = 20*dtr #rad
+S = 50e-4 #m2
+m = 5e-3 #kg
+
+phi = 10*dtr
+
+#base liée au sol
+er = array([1,0,0]).T #Bav
+etheta = array([0,1,0]).T #Bav
+ez = array([0,0,1]).T #Bav
+
+
+#valeurs par défaut, à faire varier ==> hyperparamaètres
+Cx = 0.5 #à changer
+Cz = 0.9 #à changer
+K = 1e-2 #kg/m
+
+dt = 0.0001 #pas de temps de la simulation
+n = 10000 #nombres de points de la simulation
+
+
+R = 1 #m (rayon d'une boucle)
+
+
+def F(t,Y) :
+    z, theta, dz, dtheta = Y[0], Y[1], Y[2], Y [3]
+
+
+    j1 = etheta
+    k1 = cos(phi)*ez + sin(phi)*er
+    i1 = cos(phi)*er - sin(phi)*ez
+
+    up1 = cos(alpha)*(j1) + sin(alpha)*i1 #directions des forces des winglets (plan)
+    up2 = cos(alpha)*(-j1) - sin(alpha)*i1
+    beta = 45*dtr
+    u1 = cos(beta)*up1 -sin(beta)*k1
+    u2 = cos(beta)*up2 -sin(beta)*k1
+
+
+    Omega = dtheta*ez
+    vitesse = ( (R*dtheta)**2 + (dz)**2)
+    IG = -L*i1-l*(-j1)
+    JG = L*i1 - l*(-j1)
+    vI = R*dtheta*etheta + dz*ez + cross(Omega,IG)
+    vJ = R*dtheta*etheta + dz*ez + cross(Omega,JG)
+    n_vI = linalg.norm(vI)
+    n_vJ = linalg.norm(vJ)
+
+    Fpes = -m*g*ez
+    Fair = (1/2)*rho*S*(vitesse**2)*(Cx*(-j1) + Cz*k1)
+    Fw = K*n_vI**2*u1 + K*n_vJ**2*u2
+
+    B = Fair + Fpes + Fw
+
+    ddtheta = (1/R/m) * B.T @ etheta
+    ddz = (1/m) * B.T @ ez
+
+    dY = array([dz,dtheta,ddz,ddtheta])
+    return dY
+
+
+Y0 = array([0,0.5,0.2,1])
+sol = solve_ivp(F, (0,n*dt), Y0)
+Y = sol.y
+t = sol.t
+
+###-------------------------------------------------------------------------
+
+z, theta, dz, dtheta = Y[0,:], Y[1,:], Y[2,:], Y[3,:]
+x = R*cos(theta)
+y = R*sin(theta)
+dx = -R*dtheta*sin(theta)
+dy = R*dtheta*cos(theta)
+
+fig, ax = subplots(3,3)
+ax[0,0].plot(x,y)
+ax[0,0].set_title('trajectoire plane')
+ax[0,0].set_xlabel('x(m)')
+ax[0,0].set_ylabel('y(m)')
+
+ax[0,1].plot(t,z)
+ax[0,1].set_title('altitude')
+ax[0,1].set_xlabel('t(s)')
+ax[0,1].set_ylabel('z(m)')
+
+ax[0,2].plot(t,dz)
+ax[0,2].set_title("variation d'altitude")
+ax[0,2].set_xlabel('t(s)')
+ax[0,2].set_ylabel(r'$\dot{z}$(m/s)')
+
+ax[1,0].plot(t,x)
+ax[1,0].set_title('x en fonction du temps')
+ax[1,0].set_xlabel('t(s)')
+ax[1,0].set_ylabel('x(m)')
+
+ax[1,1].plot(t,y)
+ax[1,1].set_title('y en fonction du temps')
+ax[1,1].set_xlabel('t(s)')
+ax[1,1].set_ylabel('y(m)')
+
+ax[1,2].plot(t,theta)
+ax[1,2].set_title(r'$\theta$ en fonction du temps')
+ax[1,2].set_xlabel('t(s)')
+ax[1,2].set_ylabel(r'$\theta$ (rad)')
+
+ax[2,0].plot(t,dx)
+ax[2,0].set_title(r'$\dot{x}$ en fonction du temps')
+ax[2,0].set_xlabel('t(s)')
+ax[2,0].set_ylabel(r'$\dot{x}$(m/s)')
+
+ax[2,1].plot(t,dy)
+ax[2,1].set_title(r'$\dot{y}$ en fonction du temps')
+ax[2,1].set_xlabel('t(s)')
+ax[2,1].set_ylabel(r'$\dot{y}$(m/s)')
+
+ax[2,2].plot(t,dtheta)
+ax[2,2].set_title(r'$\dot{\theta}$ en fonction du temps')
+ax[2,2].set_xlabel('t(s)')
+ax[2,2].set_ylabel(r'$\dot{\theta}$ (rad/s)')
+
+
+tight_layout()
+
+#3D
+from mpl_toolkits.mplot3d import Axes3D
+
+# Tracé du résultat en 3D
+fig2 = plt.figure(2)
+ax2 = fig2.add_subplot(projection='3d')
+ax2.plot(x, y, z, label='position')
+title("traj 3D")
+ax2.set_xlabel('X')
+ax2.set_ylabel('Y')
+ax2.set_zlabel('Z')
+tight_layout()
+
+show()
