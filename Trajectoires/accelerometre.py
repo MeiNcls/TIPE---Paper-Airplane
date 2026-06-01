@@ -1,5 +1,6 @@
 ### Traitement des données d'accéléromètre
 
+import math
 from matplotlib import lines
 import numpy as np
 import matplotlib.pyplot as plt
@@ -64,14 +65,38 @@ g=9.81
 
 
 ### Traitement de l'acceleration pour trouver la trajectoire
-def acceleration(acc_X,acc_Y, acc_Z, roll, pitch):
-    for i in range(len(acc_x)):
-        acc_X[i] = acc_X[i] + g*np.sin(pitch[i])
-        acc_Y[i] = acc_Y[i] - g*np.sin(roll[i])*np.cos(pitch[i])
-        acc_Z[i] = acc_Z[i] - g*np.cos(roll[i])*np.cos(pitch[i])
-    return acc_X, acc_Y, acc_Z
+def acceleration(acc_X,acc_Y, acc_Z, roll, pitch,yaw):
+    Rx = np.array([
+        [1, 0, 0],
+        [0, math.cos(roll), -math.sin(roll)],
+        [0, math.sin(roll), math.cos(roll)]
+    ])
 
-acc_x, acc_y, acc_z = acceleration(acc_x, acc_y, acc_z, anglex, angley)
+    Ry = np.array([
+        [math.cos(pitch), 0, math.sin(pitch)],
+        [0, 1, 0],
+        [-math.sin(pitch), 0, math.cos(pitch)]
+    ])
+
+    Rz = np.array([
+        [math.cos(yaw), -math.sin(yaw), 0],
+        [math.sin(yaw), math.cos(yaw), 0],
+        [0, 0, 1]
+    ])
+    accx0=np.zeros(len(acc_X))
+    accy0=np.zeros(len(acc_Y))
+    accz0=np.zeros(len(acc_Z))
+    for i in range(len(acc_X)):
+        acc = np.array([acc_X[i], acc_Y[i], acc_Z[i]])
+        R = Rz @ Ry @ Rx
+        acc0 = R @ acc
+        accx0[i] = acc0[0]
+        accy0[i] = acc0[1]
+        accz0[i] = acc0[2]-g
+    
+    return accx0, accy0, accz0
+
+acc_x, acc_y, acc_z = acceleration(acc_x, acc_y, acc_z, anglex, angley, anglez)
 
 def moyenne(liste):
     m = 0
