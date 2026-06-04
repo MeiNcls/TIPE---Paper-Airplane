@@ -26,7 +26,7 @@ Cx = 0.5 #à changer
 Cz = 0.9 #à changer
 K = 1e-2 #kg/m
 
-dt = 0.0001 #pas de temps de la simulation
+dt = 0.001 #pas de temps de la simulation
 n = 10000 #nombres de points de la simulation
 
 
@@ -52,8 +52,8 @@ def F(t,Y) :
     vitesse = ( (R*dtheta)**2 + (dz)**2)
     IG = -L*i1-l*(-j1)
     JG = L*i1 - l*(-j1)
-    vI = R*dtheta*etheta + dz*ez + cross(Omega,IG)
-    vJ = R*dtheta*etheta + dz*ez + cross(Omega,JG)
+    vI = R*dtheta*etheta + dz*ez + cross(Omega,-IG)
+    vJ = R*dtheta*etheta + dz*ez + cross(Omega,-JG)
     n_vI = linalg.norm(vI)
     n_vJ = linalg.norm(vJ)
 

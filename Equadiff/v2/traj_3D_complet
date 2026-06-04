@@ -1,0 +1,232 @@
+from pylab import *
+from scipy.integrate import solve_ivp
+
+dtr = pi/180
+g = 9.81 #m/s**2
+rho = 1.2 #kg/m3
+
+#géométrie
+a = 0 #m
+l= 10e-2 #m
+L = 7.5e-2 #m
+alpha = 20*dtr #rad
+beta = 45*dtr #rad
+S = 50e-4 #m2
+m = 5e-3 #kg
+
+#phi = 10*dtr
+
+#base liée au sol
+xs = array([1,0,0]).T #Bav
+ys = array([0,1,0]).T #Bav
+zs = array([0,0,1]).T #Bav
+
+
+#valeurs par défaut, à faire varier ==> hyperparamaètres
+Cx = 0.5 #à changer
+Cz = 0.9 #à changer
+K = 1e-3 #kg/m
+[A1,B1,C1,D1,E1,F1] = [1e-5,1e-5,1e-5,0,0,0]
+
+dt = 0.01 #pas de temps de la simulation
+n = 400 #nombres de points de la simulation
+
+
+#R = 1 #m (rayon d'une boucle)
+
+I = array([[A1,-F1,-E1],
+          [-F1,B1,-D1],
+          [-E1,-D1,C1]]) #Bav
+
+def Rpsi(a) :
+    #a *= dtr
+    i = array([[cos(a),sin(a),0],
+               [-sin(a),cos(a),0],
+               [0,0,1]])
+    return i
+
+def Rphi(a) :
+    i = array([[cos(a),0,-sin(a)],
+              [0,1,0],
+              [sin(a),0,cos(a)]])
+    return i
+
+
+
+def F(t,Y) :
+    P = Y[:3]
+    dx,dy,dz = Y[3], Y[4], Y[5]
+    theta,phi,psi = Y[6], Y[7], Y[8]
+    dtheta, dphi, dpsi = Y[9], Y[10], Y[11]
+
+    x2 = Rpsi(psi) @ xs
+    y2 = Rpsi(psi) @ ys
+    z2 = zs
+    x1 = Rphi(phi) @ x2
+    y1 = y2
+    z1 = Rphi(phi) @ z2
+    x0 = Rpsi(theta) @ x1
+    y0 = Rpsi(theta) @ y1
+    z0 = z1
+
+    ud2 = cos(beta)*cos(alpha)*xs + cos(beta)*sin(alpha)*ys - sin(beta)*zs
+    ug2 = cos(beta)*cos(alpha)*xs - cos(beta)*sin(alpha)*ys - sin(beta)*zs
+
+    Omega_s_0 = dpsi*zs + dphi*y2 + dtheta*z1
+    Omega_s_1 = dpsi*zs
+    Omega_s_2 = dpsi*zs + dphi*y2 
+
+    AG = -a*xs
+    IG = -L*ys-l*xs
+    JG = L*ys - l*xs
+
+    #dynamique
+
+    B = I @ ( cross(-Omega_s_2,dphi*y2) + cross(-Omega_s_1,dtheta*z1) ) + cross(Omega_s_0, I @ Omega_s_0)
+
+    m1 = array([[0,0,0],
+               [0,0,0],
+               [0,0,1]])
+    m2 =  array([[0,0,0],
+               [0,1,0],
+               [0,0,0]])
+    m3 =  array([[1,0,0],
+               [0,0,0],
+               [0,0,0]])
+    A = m1 + Rpsi(psi) @ m2 + Rpsi(psi) @  Rphi(phi) @ m3
+
+    M = I @ A
+
+    #forces
+
+
+    vG = dx*x0 + dy*y0 + dz*z0
+    norm_vG = linalg.norm(vG)
+    Fpes = -m*g*z1
+
+    v_proj = vG - dot(vG,ys)
+    i = -arcsin( dot (v_proj, zs)/ linalg.norm(v_proj))
+    Cz = i/(20*dtr)
+
+    vG_x = dot(vG, xs)
+    #Faerodyn = -(1/2)*rho*S*(norm_vG**2)*(Cx*xs + Cz*zs)*vG/norm_vG
+    Fx = (1/2)*rho*S*(vG_x**2)*Cx*xs
+    Fz = (1/2)*rho*S*(vG_x**2)*Cz*zs
+    Faerodyn = Fx + Fz
+
+    vI = vG + cross(Omega_s_0,-IG)
+    vJ = vG + cross(Omega_s_0,-JG)
+    n_vI = linalg.norm(vI)
+    n_vJ = linalg.norm(vJ)
+
+    Fwd = K*n_vI**2*ud2
+    Fwg = K*n_vJ**2*ug2
+
+    AG = AG + i*AG
+    C = cross(Faerodyn,AG)
+
+    Mwd = cross(Fwd,IG)
+    Mwg = cross(Fwg,JG)
+
+    D = Mwd + Mwg 
+
+    #calcul des dérivées secondes 
+
+    ddA = linalg.solve(M,C-B) #si on veut rajouter les winglets c'est C+D-B au lieu de C-B
+    
+    ddx  = (1/m) * (Fpes + Faerodyn) @ x0
+    ddy  = (1/m) * (Fpes + Faerodyn) @ y0
+    ddz  = (1/m) * (Fpes + Faerodyn) @ z0
+
+
+    dY = concatenate((array([dx,dy,dz,ddx,ddy,ddz,dtheta,dphi,dpsi]),ddA))
+    return dY
+
+
+Y0 = array([0,0,0,-2,0,0,
+            0,0,0,0,0,0])
+sol = solve_ivp(F, (0,n*dt), Y0)
+Y = sol.y
+t = sol.t
+
+x,y,z,dx,dy,dz = Y[0,:], Y[1,:], Y[2,:], Y[3,:], Y[4,:], Y[5,:]
+theta,phi,psi,dtheta,dphi,dpsi = Y[6,:], Y[7,:], Y[8,:], Y[9,:], Y[10,:], Y[11,:]
+
+fig, ax = subplots(3,4)
+ax[0,0].plot(x,y)
+ax[0,0].set_title('trajectoire plane')
+ax[0,0].set_xlabel('x(m)')
+ax[0,0].set_ylabel('y(m)')
+
+ax[0,1].plot(t,z)
+ax[0,1].set_title('altitude')
+ax[0,1].set_xlabel('t(s)')
+ax[0,1].set_ylabel('z(m)')
+
+ax[0,2].plot(t,dz)
+ax[0,2].set_title("variation d'altitude")
+ax[0,2].set_xlabel('t(s)')
+ax[0,2].set_ylabel(r'$\dot{z}$(m/s)')
+
+ax[1,0].plot(t,x)
+ax[1,0].set_title('x en fonction du temps')
+ax[1,0].set_xlabel('t(s)')
+ax[1,0].set_ylabel('x(m)')
+
+ax[1,1].plot(t,y)
+ax[1,1].set_title('y en fonction du temps')
+ax[1,1].set_xlabel('t(s)')
+ax[1,1].set_ylabel('y(m)')
+
+ax[1,2].plot(t,phi)
+ax[1,2].set_title(r'$\phi$ en fonction du temps')
+ax[1,2].set_xlabel('t(s)')
+ax[1,2].set_ylabel(r'$\phi$ (rad)')
+
+ax[2,0].plot(t,dx)
+ax[2,0].set_title(r'$\dot{x}$ en fonction du temps')
+ax[2,0].set_xlabel('t(s)')
+ax[2,0].set_ylabel(r'$\dot{x}$(m/s)')
+
+ax[2,1].plot(t,dy)
+ax[2,1].set_title(r'$\dot{y}$ en fonction du temps')
+ax[2,1].set_xlabel('t(s)')
+ax[2,1].set_ylabel(r'$\dot{y}$(m/s)')
+
+ax[2,2].plot(t,dphi)
+ax[2,2].set_title(r'$\dot{\phi}$ en fonction du temps')
+ax[2,2].set_xlabel('t(s)')
+ax[2,2].set_ylabel(r'$\dot{\phi}$ (rad/s)')
+
+ax[0,3].plot(t,theta)
+ax[0,3].set_title(r'$\theta$ en fonction du temps')
+ax[0,3].set_xlabel('t(s)')
+ax[0,3].set_ylabel(r'$\theta$ (rad)')
+
+ax[1,3].plot(t,psi)
+ax[1,3].set_title(r'$\psi$ en fonction du temps')
+ax[1,3].set_xlabel('t(s)')
+ax[1,3].set_ylabel(r'$\psi$ (rad)')
+
+ax[2,3].plot(t,dpsi)
+ax[2,3].set_title(r'$\dot{\psi}$ en fonction du temps')
+ax[2,3].set_xlabel('t(s)')
+ax[2,3].set_ylabel(r'$\dot{\psi}$ (rad/s)')
+
+
+tight_layout()
+
+#3D
+from mpl_toolkits.mplot3d import Axes3D
+
+# Tracé du résultat en 3D
+fig2 = plt.figure(2)
+ax2 = fig2.add_subplot(projection='3d')
+ax2.plot(x, y, z, label='Attracteur étrange')
+title("traj 3D")
+ax2.set_xlabel('X')
+ax2.set_ylabel('Y')
+ax2.set_zlabel('Z')
+tight_layout()
+
+show()
