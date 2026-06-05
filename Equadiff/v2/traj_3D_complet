@@ -6,7 +6,7 @@ g = 9.81 #m/s**2
 rho = 1.2 #kg/m3
 
 #géométrie
-a = 0 #m
+a = 2e-2 #m
 l= 10e-2 #m
 L = 7.5e-2 #m
 alpha = 20*dtr #rad
@@ -29,7 +29,7 @@ K = 1e-3 #kg/m
 [A1,B1,C1,D1,E1,F1] = [1e-5,1e-5,1e-5,0,0,0]
 
 dt = 0.01 #pas de temps de la simulation
-n = 400 #nombres de points de la simulation
+n = 430 #nombres de points de la simulation
 
 
 #R = 1 #m (rayon d'une boucle)
@@ -51,10 +51,23 @@ def Rphi(a) :
               [sin(a),0,cos(a)]])
     return i
 
+tab_Fz = []
+tab_Fx = []
+tab_i = []
+tab_Cz = []
+temps = []
+tab_ddx = []
+tab_ddy = []
+tab_ddz = []
+tab_det = []
+tab_AG = []
 
-
-def F(t,Y) :
+def F(t1,Y) :
     P = Y[:3]
+
+    #if -P[2] + Y0[2] > 50 : #sol
+    #    return zeros(12)
+
     dx,dy,dz = Y[3], Y[4], Y[5]
     theta,phi,psi = Y[6], Y[7], Y[8]
     dtheta, dphi, dpsi = Y[9], Y[10], Y[11]
@@ -76,7 +89,7 @@ def F(t,Y) :
     Omega_s_1 = dpsi*zs
     Omega_s_2 = dpsi*zs + dphi*y2 
 
-    AG = -a*xs
+    #AG = -a*xs
     IG = -L*ys-l*xs
     JG = L*ys - l*xs
 
@@ -104,15 +117,21 @@ def F(t,Y) :
     norm_vG = linalg.norm(vG)
     Fpes = -m*g*z1
 
-    v_proj = vG - dot(vG,ys)
-    i = -arcsin( dot (v_proj, zs)/ linalg.norm(v_proj))
-    Cz = i/(20*dtr)
+    v_proj = vG - dot(vG,ys)*ys
+    i = -arcsin( dot (v_proj, zs)/ linalg.norm(v_proj)) ## à changer
+    #i = arccos(- dot(vG,zs)/linalg.norm(vG))
+    Cz = i/(20*dtr) 
 
     vG_x = dot(vG, xs)
     #Faerodyn = -(1/2)*rho*S*(norm_vG**2)*(Cx*xs + Cz*zs)*vG/norm_vG
     Fx = (1/2)*rho*S*(vG_x**2)*Cx*xs
     Fz = (1/2)*rho*S*(vG_x**2)*Cz*zs
     Faerodyn = Fx + Fz
+
+    global tab_Fz
+    tab_Fz.append(linalg.norm(Fz))
+    temps.append(t1)
+
 
     vI = vG + cross(Omega_s_0,-IG)
     vJ = vG + cross(Omega_s_0,-JG)
@@ -122,7 +141,7 @@ def F(t,Y) :
     Fwd = K*n_vI**2*ud2
     Fwg = K*n_vJ**2*ug2
 
-    AG = AG + i*AG
+    AG = -a*xs  - sin(i)*a*xs  ## à changer
     C = cross(Faerodyn,AG)
 
     Mwd = cross(Fwd,IG)
@@ -138,21 +157,39 @@ def F(t,Y) :
     ddy  = (1/m) * (Fpes + Faerodyn) @ y0
     ddz  = (1/m) * (Fpes + Faerodyn) @ z0
 
+    tab_ddx.append(ddx)
+    tab_ddy.append(ddy)
+    tab_ddz.append(ddz)
+    tab_i.append(i)
+    tab_Fx.append(Fx)
+    tab_Cz.append(Cz)
+    tab_AG.append(linalg.norm(AG))
+
 
     dY = concatenate((array([dx,dy,dz,ddx,ddy,ddz,dtheta,dphi,dpsi]),ddA))
     return dY
 
 
-Y0 = array([0,0,0,-2,0,0,
-            0,0,0,0,0,0])
+Y0 = array([0,0,0,-5,0,0,
+            0,20*dtr,0,0,0,0])
 sol = solve_ivp(F, (0,n*dt), Y0)
 Y = sol.y
 t = sol.t
 
+Fz_np = array(tab_Fz)
+temps_np = array(temps)
+ddx_np = array(tab_ddx)
+ddy_np = array(tab_ddy)
+ddz_np = array(tab_ddz)
+Cz_np = array(tab_Cz)
+Fx_np = array(tab_Fx)
+i_np = array(tab_i)
+AG_np = array(tab_AG)
+
 x,y,z,dx,dy,dz = Y[0,:], Y[1,:], Y[2,:], Y[3,:], Y[4,:], Y[5,:]
 theta,phi,psi,dtheta,dphi,dpsi = Y[6,:], Y[7,:], Y[8,:], Y[9,:], Y[10,:], Y[11,:]
 
-fig, ax = subplots(3,4)
+fig1, ax = subplots(3,4)
 ax[0,0].plot(x,y)
 ax[0,0].set_title('trajectoire plane')
 ax[0,0].set_xlabel('x(m)')
@@ -178,10 +215,10 @@ ax[1,1].set_title('y en fonction du temps')
 ax[1,1].set_xlabel('t(s)')
 ax[1,1].set_ylabel('y(m)')
 
-ax[1,2].plot(t,phi)
+ax[1,2].plot(t,phi/dtr)
 ax[1,2].set_title(r'$\phi$ en fonction du temps')
 ax[1,2].set_xlabel('t(s)')
-ax[1,2].set_ylabel(r'$\phi$ (rad)')
+ax[1,2].set_ylabel(r'$\phi$ (deg)')
 
 ax[2,0].plot(t,dx)
 ax[2,0].set_title(r'$\dot{x}$ en fonction du temps')
@@ -198,20 +235,65 @@ ax[2,2].set_title(r'$\dot{\phi}$ en fonction du temps')
 ax[2,2].set_xlabel('t(s)')
 ax[2,2].set_ylabel(r'$\dot{\phi}$ (rad/s)')
 
-ax[0,3].plot(t,theta)
+ax[0,3].plot(t,theta/dtr)
 ax[0,3].set_title(r'$\theta$ en fonction du temps')
 ax[0,3].set_xlabel('t(s)')
-ax[0,3].set_ylabel(r'$\theta$ (rad)')
+ax[0,3].set_ylabel(r'$\theta$ (deg)')
 
-ax[1,3].plot(t,psi)
+ax[1,3].plot(t,psi/dtr)
 ax[1,3].set_title(r'$\psi$ en fonction du temps')
 ax[1,3].set_xlabel('t(s)')
-ax[1,3].set_ylabel(r'$\psi$ (rad)')
+ax[1,3].set_ylabel(r'$\psi$ (deg)')
 
 ax[2,3].plot(t,dpsi)
 ax[2,3].set_title(r'$\dot{\psi}$ en fonction du temps')
 ax[2,3].set_xlabel('t(s)')
 ax[2,3].set_ylabel(r'$\dot{\psi}$ (rad/s)')
+
+tight_layout()
+
+fig2, ax2 = subplots(3,3)
+
+ax2[0,0].plot(temps_np,ddx_np)
+ax2[0,0].set_title(r'$\ddot{x}$ en fonction du temps')
+ax2[0,0].set_xlabel('t(s)')
+ax2[0,0].set_ylabel(r'$\ddot{x}$(m/s)')
+
+ax2[0,1].plot(temps_np,ddy_np)
+ax2[0,1].set_title(r'$\ddot{y}$ en fonction du temps')
+ax2[0,1].set_xlabel('t(s)')
+ax2[0,1].set_ylabel(r'$\ddot{y}$(m/s)')
+
+ax2[0,2].plot(temps_np,ddz_np)
+ax2[0,2].set_title(r'$\ddot{z}$ en fonction du temps')
+ax2[0,2].set_xlabel('t(s)')
+ax2[0,2].set_ylabel(r'$\ddot{z}$(m/s)')
+
+ax2[1,0].plot(temps_np,Fx_np)
+ax2[1,0].set_title('trainée')
+ax2[1,0].set_xlabel('t(s)')
+ax2[1,0].set_ylabel('Fx (N)')
+
+ax2[1,1].plot(temps_np,Fz_np)
+ax2[1,1].set_title('portance')
+ax2[1,1].set_xlabel('t(s)')
+ax2[1,1].set_ylabel('Fz (N)')
+
+ax2[1,2].plot(temps_np,Cz_np)
+ax2[1,2].set_title('Cz')
+ax2[1,2].set_xlabel('t(s)')
+ax2[1,2].set_ylabel('Cz')
+
+ax2[2,0].plot(temps_np,i_np/dtr)
+ax2[2,0].set_title("angle d'incidence")
+ax2[2,0].set_xlabel('t(s)')
+ax2[2,0].set_ylabel('i (deg)')
+
+ax2[2,1].plot(temps_np,AG_np*1e2)
+ax2[2,1].set_title("position du centre de poussée")
+ax2[2,1].set_xlabel('t(s)')
+ax2[2,1].set_ylabel('AG (cm)')
+
 
 
 tight_layout()
@@ -220,13 +302,13 @@ tight_layout()
 from mpl_toolkits.mplot3d import Axes3D
 
 # Tracé du résultat en 3D
-fig2 = plt.figure(2)
-ax2 = fig2.add_subplot(projection='3d')
-ax2.plot(x, y, z, label='Attracteur étrange')
+fig3 = plt.figure(3)
+ax3 = fig3.add_subplot(projection='3d')
+ax3.plot(x, y, z, label='Attracteur étrange')
 title("traj 3D")
-ax2.set_xlabel('X')
-ax2.set_ylabel('Y')
-ax2.set_zlabel('Z')
+ax3.set_xlabel('X')
+ax3.set_ylabel('Y')
+ax3.set_zlabel('Z')
 tight_layout()
 
 show()

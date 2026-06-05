@@ -26,15 +26,15 @@ Cx = 0.5 #à changer
 Cz = 0.9 #à changer
 K = 1e-2 #kg/m
 
-dt = 0.001 #pas de temps de la simulation
-n = 10000 #nombres de points de la simulation
+dt = 0.1 #pas de temps de la simulation
+n = 600 #nombres de points de la simulation
 
 
 R = 1 #m (rayon d'une boucle)
 
 
 def F(t,Y) :
-    z, theta, dz, dtheta = Y[0], Y[1], Y[2], Y [3]
+    r,z, theta, dr,dz, dtheta = Y[0], Y[1], Y[2], Y [3], Y[4], Y[5]
 
 
     j1 = etheta
@@ -49,11 +49,11 @@ def F(t,Y) :
 
 
     Omega = dtheta*ez
-    vitesse = ( (R*dtheta)**2 + (dz)**2)
+    vitesse = ( (r*dtheta)**2 + (dz)**2)
     IG = -L*i1-l*(-j1)
     JG = L*i1 - l*(-j1)
-    vI = R*dtheta*etheta + dz*ez + cross(Omega,-IG)
-    vJ = R*dtheta*etheta + dz*ez + cross(Omega,-JG)
+    vI = r*dtheta*etheta + dz*ez + cross(Omega,-IG)
+    vJ = r*dtheta*etheta + dz*ez + cross(Omega,-JG)
     n_vI = linalg.norm(vI)
     n_vJ = linalg.norm(vJ)
 
@@ -62,26 +62,28 @@ def F(t,Y) :
     Fw = K*n_vI**2*u1 + K*n_vJ**2*u2
 
     B = Fair + Fpes + Fw
+    #B = Fair + Fpes
 
-    ddtheta = (1/R/m) * B.T @ etheta
-    ddz = (1/m) * B.T @ ez
+    ddr = (1/m) * dot(B,er) + r*dtheta**2
+    ddtheta = (1/m) * (1/r) * dot(B,etheta) - dr*dtheta*2
+    ddz = (1/m) * dot(B,ez)
 
-    dY = array([dz,dtheta,ddz,ddtheta])
+    dY = array([dr,dz,dtheta,ddr,ddz,ddtheta])
     return dY
 
 
-Y0 = array([0,0.5,0.2,1])
+Y0 = array([2,0,0,0,0,1])
 sol = solve_ivp(F, (0,n*dt), Y0)
 Y = sol.y
 t = sol.t
 
 ###-------------------------------------------------------------------------
 
-z, theta, dz, dtheta = Y[0,:], Y[1,:], Y[2,:], Y[3,:]
-x = R*cos(theta)
-y = R*sin(theta)
-dx = -R*dtheta*sin(theta)
-dy = R*dtheta*cos(theta)
+r,z, theta, dr,dz, dtheta = Y[0,:], Y[1,:], Y[2,:], Y[3,:], Y[4,:], Y[5,:]
+x = r*cos(theta)
+y = r*sin(theta)
+dx = -r*dtheta*sin(theta) + dr*cos(theta)
+dy = r*dtheta*cos(theta) + dr*sin(theta)
 
 fig, ax = subplots(3,3)
 ax[0,0].plot(x,y)
@@ -104,25 +106,25 @@ ax[1,0].set_title('x en fonction du temps')
 ax[1,0].set_xlabel('t(s)')
 ax[1,0].set_ylabel('x(m)')
 
-ax[1,1].plot(t,y)
-ax[1,1].set_title('y en fonction du temps')
+ax[1,1].plot(t,r)
+ax[1,1].set_title('r en fonction du temps')
 ax[1,1].set_xlabel('t(s)')
-ax[1,1].set_ylabel('y(m)')
+ax[1,1].set_ylabel('r(m)')
 
-ax[1,2].plot(t,theta)
+ax[1,2].plot(t,theta/dtr)
 ax[1,2].set_title(r'$\theta$ en fonction du temps')
 ax[1,2].set_xlabel('t(s)')
-ax[1,2].set_ylabel(r'$\theta$ (rad)')
+ax[1,2].set_ylabel(r'$\theta$ (degré)')
 
 ax[2,0].plot(t,dx)
 ax[2,0].set_title(r'$\dot{x}$ en fonction du temps')
 ax[2,0].set_xlabel('t(s)')
 ax[2,0].set_ylabel(r'$\dot{x}$(m/s)')
 
-ax[2,1].plot(t,dy)
-ax[2,1].set_title(r'$\dot{y}$ en fonction du temps')
+ax[2,1].plot(t,dr)
+ax[2,1].set_title(r'$\dot{r}$ en fonction du temps')
 ax[2,1].set_xlabel('t(s)')
-ax[2,1].set_ylabel(r'$\dot{y}$(m/s)')
+ax[2,1].set_ylabel(r'$\dot{r}$(m/s)')
 
 ax[2,2].plot(t,dtheta)
 ax[2,2].set_title(r'$\dot{\theta}$ en fonction du temps')
