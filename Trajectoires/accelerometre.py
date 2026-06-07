@@ -7,12 +7,7 @@ import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.integrate import cumtrapz
 
-
-### Import des données
-
-
-
-### Extraction des données
+### Import/Extraction des données
 def extrait_ligne(ligne,div):
     L=[]
     mot=""
@@ -54,9 +49,9 @@ def extraction_temps(data):
 
 cvradiant=np.pi/180
 
-acc_x = np.array(extraction_colonne(donnees, 2))
-acc_y = np.array(extraction_colonne(donnees, 3))
-acc_z = np.array(extraction_colonne(donnees, 4))
+acc_x = np.array(extraction_colonne(donnees, 2))*g
+acc_y = np.array(extraction_colonne(donnees, 3))*g
+acc_z = np.array(extraction_colonne(donnees, 4))*g
 anglex = np.array(extraction_colonne(donnees, 8))*cvradiant
 angley = np.array(extraction_colonne(donnees, 9))*cvradiant
 anglez = np.array(extraction_colonne(donnees, 10))*cvradiant
@@ -117,3 +112,35 @@ x = integration(vx, dt)
 y = integration(vy, dt)
 z = integration(vz, dt)
 
+
+
+plt.close(1)
+plt.figure(1)
+plt.plot(time, acc_x, label="Accélération sur l'axe z")
+plt.ylabel('Accélération (m/s²)')  # Titre de l'axe y
+plt.xlabel("Temps (s)")  # Titre de l'axe x
+plt.title("Accélération")  # Titre du graphique
+plt.legend()
+plt.grid(True)  # Affichage de la grille
+plt.show()  # Affichage d'une courbe
+
+
+plt.close(2)
+plt.figure(2)
+plt.plot(time, vz, label="Vitesse selon l'axe z, rect ")
+plt.ylabel('Vitesse (m/s)')  # Titre de l'axe y
+plt.xlabel("Temps (s)")  # Titre de l'axe x
+plt.title("Vitesse")  # Titre du graphique
+plt.legend()
+plt.grid(True)  # Affichage de la grille
+plt.show()
+
+plt.close(3)
+plt.figure(3)
+plt.plot(x, y, label="trajectoire y en fonction de x  ")
+plt.ylabel('position selon y en m')  # Titre de l'axe y
+plt.xlabel("position selon y en m")  # Titre de l'axe x
+plt.title("TRajectoire")  # Titre du graphique
+plt.legend()
+plt.grid(True)  # Affichage de la grille
+plt.show()
