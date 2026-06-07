@@ -14,7 +14,7 @@ S = 50e-4 #m2
 m = 5e-3 #kg
 [A1,B1,C1,D1,E1,F1] = [1e-5,1e-5,1e-5,0,0,0]
 
-phi = 20*dtr
+phi = 40*dtr
 
 #base liée au sol
 u = array([1,0,0]).T #Bav
@@ -88,6 +88,7 @@ def F(t,Y) :
 
 sol = solve_ivp(F, (0,n*dt), Y0)
 Y = sol.y
+t = sol.t
 x_tab, y_tab = Y[0,:], Y[1,:]
 close(1)
 figure(1)
@@ -95,4 +96,75 @@ plot(x_tab,y_tab)
 title("trajectoire plane")
 xlabel("x(m)")
 ylabel("y(m)")
+
+# ------------
+
+r,z, theta, dr,dz, dtheta = Y[0,:], Y[1,:], Y[2,:], Y[3,:], Y[4,:], Y[5,:]
+x = r*cos(theta)
+y = r*sin(theta)
+dx = -r*dtheta*sin(theta) + dr*cos(theta)
+dy = r*dtheta*cos(theta) + dr*sin(theta)
+
+fig, ax = subplots(3,3)
+ax[0,0].plot(x,y)
+ax[0,0].set_title('trajectoire plane')
+ax[0,0].set_xlabel('x(m)')
+ax[0,0].set_ylabel('y(m)')
+
+ax[0,1].plot(t,z)
+ax[0,1].set_title('altitude')
+ax[0,1].set_xlabel('t(s)')
+ax[0,1].set_ylabel('z(m)')
+
+ax[0,2].plot(t,dz)
+ax[0,2].set_title("variation d'altitude")
+ax[0,2].set_xlabel('t(s)')
+ax[0,2].set_ylabel(r'$\dot{z}$(m/s)')
+
+ax[1,0].plot(t,x)
+ax[1,0].set_title('x en fonction du temps')
+ax[1,0].set_xlabel('t(s)')
+ax[1,0].set_ylabel('x(m)')
+
+ax[1,1].plot(t,r)
+ax[1,1].set_title('r en fonction du temps')
+ax[1,1].set_xlabel('t(s)')
+ax[1,1].set_ylabel('r(m)')
+
+ax[1,2].plot(t,theta/dtr)
+ax[1,2].set_title(r'$\theta$ en fonction du temps')
+ax[1,2].set_xlabel('t(s)')
+ax[1,2].set_ylabel(r'$\theta$ (degré)')
+
+ax[2,0].plot(t,dx)
+ax[2,0].set_title(r'$\dot{x}$ en fonction du temps')
+ax[2,0].set_xlabel('t(s)')
+ax[2,0].set_ylabel(r'$\dot{x}$(m/s)')
+
+ax[2,1].plot(t,dr)
+ax[2,1].set_title(r'$\dot{r}$ en fonction du temps')
+ax[2,1].set_xlabel('t(s)')
+ax[2,1].set_ylabel(r'$\dot{r}$(m/s)')
+
+ax[2,2].plot(t,dtheta)
+ax[2,2].set_title(r'$\dot{\theta}$ en fonction du temps')
+ax[2,2].set_xlabel('t(s)')
+ax[2,2].set_ylabel(r'$\dot{\theta}$ (rad/s)')
+
+
+tight_layout()
+
+#3D
+from mpl_toolkits.mplot3d import Axes3D
+
+# Tracé du résultat en 3D
+fig2 = plt.figure(2)
+ax2 = fig2.add_subplot(projection='3d')
+ax2.plot(x, y, z, label='position')
+title("traj 3D")
+ax2.set_xlabel('X')
+ax2.set_ylabel('Y')
+ax2.set_zlabel('Z')
+tight_layout()
+
 show()

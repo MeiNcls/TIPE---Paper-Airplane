@@ -38,16 +38,17 @@ Cz = 0.8 #à changer
 K = 1e-3 #kg/m
 #Y0 = [0,0,0,2,0.5,2] #conditions initiales
 dt = 0.01 #pas de temps de la simulation
-n = 7000 #nombres de points de la simulation
+n = 4000 #nombres de points de la simulation
 R = 4 #m (rayon d'une boucle)
 d = 1
 v_lin = 2 #m/s
+theta_0 = 0.5 #rad/s
 
 #variation des hyperparamètres :
-tab_K = [1e-6,1e-5,1e-4,1e-3,1e-1,1]
+tab_K = [1e-4,1e-3,2e-2,1e-1]
 #tab_d = [0,0.3,0.6,0.9,1.2,1.8,2.4,3]
 #tab_d = [0,0.5,1,1.5,2,2.5,3,3.5,4]
-tab_d = [x for x in range (-5,7,2)]
+tab_d = [0,1,3,6]
 tab_Cx = [0.2,0.3,0.4,0.6,0.8,1.4]
 tab_Cz = [0.3,0.7,1,1.5,2,2.5]
 tab_theta_0 = [0.1,3,5]
@@ -58,9 +59,9 @@ tab_theta_0 = [0.1,3,5]
 #couleur_d = ['cyan','lightskyblue','deepskyblue','dodgerblue','mediumblue','darkblue','rebeccapurple','purple','darkviolet']
 #couleur_d = ['lightskyblue','deepskyblue','dodgerblue','darkblue','rebeccapurple','purple','darkviolet']
 couleur = ['gold','orange','orangered','red','darkred','mediumvioletred','fuchsia','blueviolet','dodgerblue','cyan']
-couleur_d = ['gold','orangered','darkred','mediumvioletred','blueviolet','dodgerblue']
+couleur_d = ['gold','red','purple','dodgerblue','cyan']
 couleur_Cx = ['orange','red','darkred','fuchsia','blueviolet','cyan']
-couleur_K = ['gold','orangered','darkred','mediumvioletred','dodgerblue','cyan']
+couleur_K = ['orange','red','cyan','green']
 couleur_Cz = ['orange','red','darkred','fuchsia','blueviolet','cyan']
 couleur_R = ['orange','red','darkred','fuchsia','blueviolet','cyan']
 couleur_theta_0 = ['orange','fuchsia','blueviolet','cyan']
@@ -174,7 +175,7 @@ n_vJ = vJ.norm()
 #variation de K
 
 #pour générer la figure avec les variations de K
-
+"""
 for i in range (len(tab_K)) : 
     K = tab_K[i]
     couleur = couleur_K[i] 
@@ -234,24 +235,25 @@ for i in range (len(tab_K)) :
     sol = solve_ivp(lambda t, Y : f(Y,t),[0,n*dt],Y0,t_eval = np.linspace(0,n*dt,n))
     Y = sol.y
     x_tab, y_tab = Y[0,:], Y[1,:]
-    plot(x_tab,y_tab, couleur ,label = f"K = {K}kg/m")
+    plot(x_tab,y_tab, couleur ,label = f"K = {K}kg/m", zorder = 1)
     
 title("trajectoire plane", fontsize = 20, x = 0.12, y = 1.03 )
-suptitle(f'Cx = {Cx}, Cz = {Cz} \n' f'Y0 = [0,0,0,{v_lin},{d*v_lin},{(v_lin*(1+d**2)**0.5)/R:.2e}] USI', fontsize = 10,x = 0.7, y = 0.96 )
+suptitle(f'Cx = {Cx}, Cz = {Cz},  \n' f'Y0 = [0,0,0,{v_lin},{d},{theta_0} ] USI', fontsize = 8,x = 0.7, y = 0.96 )
 xlabel("x(m)")
 ylabel("y(m)")
 axis("equal")
+scatter(array(0),array(0), c = 'black',marker = 'X', zorder = 2)
 #xlim(-20,20)
 #ylim(-20,20)
 legend()
 show()
-
+"""
 
 # variation de d
-"""
+
 for i in range(len(tab_d)) : 
     d = tab_d[i]
-    Y0 = [0,0,0,v_lin,d*v_lin,(v_lin*(1+d**2)**0.5)/R]
+    Y0 = [0,0,0,v_lin,d,theta_0]
 
     #portance, trainée
     vitesse_carre = dx**2 + dy**2 
@@ -307,17 +309,18 @@ for i in range(len(tab_d)) :
     sol = solve_ivp(lambda t, Y : f(Y,t),[0,n*dt],Y0,t_eval = np.linspace(0,n*dt,n))
     Y = sol.y
     x_tab, y_tab = Y[0,:], Y[1,:]
-    plot(x_tab,y_tab,couleur_d[i], label = f"d = {d}")
+    plot(x_tab,y_tab,couleur_d[i], label = f"vd = {d}", zorder = 1)
 
  
 title("trajectoire plane", fontsize = 20, x = 0.12, y = 1.03 )
-suptitle(f'Cx = {Cx}, Cz = {Cz}, v_lin = {v_lin} m/s, R = {R}m, K = {K}kg/m \n Y0 = [0,0,0,v_lin,d*v_lin,(v_lin*(1+d**2)**0.5)/R] USI', fontsize = 8,x = 0.7, y = 0.96 )
+suptitle(f'Cx = {Cx}, Cz = {Cz}, K = {K}kg/m \n' f'Y0 = [0,0,0,{v_lin},'r'v_d,'f'{theta_0}] USI', fontsize = 8,x = 0.7, y = 0.96 )
 axis("equal")
 xlabel("x(m)")
 ylabel("y(m)")
 legend()
+scatter(array(0),array(0), c = 'black',marker = 'X', zorder = 2)
 show()
-"""
+
 
 #variations de Cx
 """
@@ -379,17 +382,18 @@ for i in range(len(tab_Cx)) :
     sol = solve_ivp(lambda t, Y : f(Y,t),[0,n*dt],Y0,t_eval = np.linspace(0,n*dt,n))
     Y = sol.y
     x_tab, y_tab = Y[0,:], Y[1,:]
-    plot(x_tab,y_tab,couleur_Cx[i], label = f"Cx = {Cx}")
+    plot(x_tab,y_tab,couleur_Cx[i], label = f"Cx = {Cx}", zorder = 1)
 
  
 title("trajectoire plane", fontsize = 20, x = 0.12, y = 1.03 )
-suptitle(f'Cz = {Cz}, vlin = {v_lin} m/s, R = {R}m, K = {K}kg/m, d={d} \n' r'Y0 = [0,0,0,vlin,$d*vlin$,$ \frac{vlin \sqrt{(1+d^2)}}{R} $] USI', fontsize = 8,x = 0.7, y = 0.96 )
+suptitle(f'Cz = {Cz}, K = {K}kg/m \n' f'Y0 = [0,0,0,{v_lin},{d},{theta_0} ] USI', fontsize = 8,x = 0.7, y = 0.96 )
 #suptitle( r'Y0 = [0,0,0,vlin,$d*vlin$,$ \frac{vlin \sqrt{(1+d^2)}}{R} $] USI',fontsize = 8,x = 0.7, y = 0.94)
-ylim(-20,20)
+#ylim(-20,20)
 axis("equal")
 xlabel("x(m)")
 ylabel("y(m)")
 legend()
+scatter(array(0),array(0), c = 'black',marker = 'X', zorder = 2)
 show()
 """
 

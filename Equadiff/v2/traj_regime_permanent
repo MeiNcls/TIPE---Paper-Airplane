@@ -72,7 +72,7 @@ def F(t,Y) :
     return dY
 
 
-Y0 = array([2,0,0,0,0,1])
+Y0 = array([2,0,0,0,0,0.3])
 sol = solve_ivp(F, (0,n*dt), Y0)
 Y = sol.y
 t = sol.t

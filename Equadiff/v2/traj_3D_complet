@@ -23,7 +23,7 @@ zs = array([0,0,1]).T #Bav
 
 
 #valeurs par défaut, à faire varier ==> hyperparamaètres
-Cx = 0.5 #à changer
+Cx = 0.1 #à changer
 Cz = 0.9 #à changer
 K = 1e-3 #kg/m
 [A1,B1,C1,D1,E1,F1] = [1e-5,1e-5,1e-5,0,0,0]
@@ -117,10 +117,16 @@ def F(t1,Y) :
     norm_vG = linalg.norm(vG)
     Fpes = -m*g*z1
 
-    v_proj = vG - dot(vG,ys)*ys
-    i = -arcsin( dot (v_proj, zs)/ linalg.norm(v_proj)) ## à changer
+
+      
+    #vA = vG + cross(Omega_s_0,-AG)
+    #v_proj = vG - dot(vG,ys)*ys
+    #i = -arcsin( dot (v_proj, zs)/ linalg.norm(v_proj)) ## à changer
     #i = arccos(- dot(vG,zs)/linalg.norm(vG))
+    i = arcsin(dot(cross(xs,vG)/linalg.norm(vG),ys))
     Cz = i/(20*dtr) 
+
+    AG = -(a/2)/(10*dtr)*i*xs   ## à changer  
 
     vG_x = dot(vG, xs)
     #Faerodyn = -(1/2)*rho*S*(norm_vG**2)*(Cx*xs + Cz*zs)*vG/norm_vG
@@ -141,7 +147,7 @@ def F(t1,Y) :
     Fwd = K*n_vI**2*ud2
     Fwg = K*n_vJ**2*ug2
 
-    AG = -a*xs  - sin(i)*a*xs  ## à changer
+    
     C = cross(Faerodyn,AG)
 
     Mwd = cross(Fwd,IG)
@@ -163,7 +169,7 @@ def F(t1,Y) :
     tab_i.append(i)
     tab_Fx.append(Fx)
     tab_Cz.append(Cz)
-    tab_AG.append(linalg.norm(AG))
+    tab_AG.append(dot(AG,xs))
 
 
     dY = concatenate((array([dx,dy,dz,ddx,ddy,ddz,dtheta,dphi,dpsi]),ddA))
@@ -305,10 +311,10 @@ from mpl_toolkits.mplot3d import Axes3D
 fig3 = plt.figure(3)
 ax3 = fig3.add_subplot(projection='3d')
 ax3.plot(x, y, z, label='Attracteur étrange')
-title("traj 3D")
-ax3.set_xlabel('X')
-ax3.set_ylabel('Y')
-ax3.set_zlabel('Z')
+title("trajectoire 3D")
+ax3.set_xlabel('x (m)')
+ax3.set_ylabel('y (m)')
+ax3.set_zlabel('z (m)')
 tight_layout()
 
 show()
