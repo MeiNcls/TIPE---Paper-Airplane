@@ -1,11 +1,10 @@
-### Traitement des données d'accéléromètre
-
 import math
-from matplotlib import lines
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.integrate import cumtrapz
+
+
 
 ### Import/Extraction des données
 def extrait_ligne(ligne,div):
@@ -32,8 +31,9 @@ def extrait_donnees(nomFichier):
         data[i-1]=extrait_ligne(line, div)
     return data
 
-donnees = extrait_donnees("Testacc.txt")
-#print(donnees[0:2])
+donnees1 = extrait_donnees("Lancer1.txt")
+donnees2 = extrait_donnees("Lancer2.txt")
+donnees3 = extrait_donnees("Lancer3.txt")
 
 def extraction_colonne(data, j):
     return [float(data[i][j]) for i in range(len(data)-1)]
@@ -48,19 +48,34 @@ def extraction_temps(data):
     return t
 
 cvradiant=np.pi/180
-
-acc_x = np.array(extraction_colonne(donnees, 2))*g
-acc_y = np.array(extraction_colonne(donnees, 4))*g
-acc_z = -np.array(extraction_colonne(donnees, 3))*g
-anglex = np.array(extraction_colonne(donnees, 8))*cvradiant
-angley = np.array(extraction_colonne(donnees, 10))*cvradiant
-anglez = np.array(extraction_colonne(donnees, 9))*cvradiant
-time = np.array(extraction_temps(donnees))
 g=9.81
 
+acc_x1 = np.array(extraction_colonne(donnees1, 2))*g
+acc_y1 = np.array(extraction_colonne(donnees1, 4))*g
+acc_z1 = np.array(extraction_colonne(donnees1, 3))*g
+anglex1 = np.array(extraction_colonne(donnees1, 8))*cvradiant
+angley1 = np.array(extraction_colonne(donnees1, 10))*cvradiant
+anglez1 = np.array(extraction_colonne(donnees1, 9))*cvradiant
+time1 = np.array(extraction_temps(donnees1))
+
+acc_x2 = np.array(extraction_colonne(donnees2, 2))*g
+acc_y2 = np.array(extraction_colonne(donnees2, 4))*g
+acc_z2 = np.array(extraction_colonne(donnees2, 3))*g
+anglex2 = np.array(extraction_colonne(donnees2, 8))*cvradiant
+angley2 = np.array(extraction_colonne(donnees2, 10))*cvradiant
+anglez2 = np.array(extraction_colonne(donnees2, 9))*cvradiant
+time2 = np.array(extraction_temps(donnees2))
+
+acc_x3 = np.array(extraction_colonne(donnees3, 2))*g
+acc_y3 = np.array(extraction_colonne(donnees3, 4))*g
+acc_z3 = np.array(extraction_colonne(donnees3, 3))*g
+anglex3 = np.array(extraction_colonne(donnees3, 8))*cvradiant
+angley3 = np.array(extraction_colonne(donnees3, 10))*cvradiant
+anglez3 = np.array(extraction_colonne(donnees3, 9))*cvradiant
+time3 = np.array(extraction_temps(donnees3))
 
 ### Traitement de l'acceleration pour trouver la trajectoire
-def acceleration(acc_X,acc_Y, acc_Z, roll, pitch,yaw):
+def changement_de_base(roll, pitch,yaw):
     Rx = np.array([
         [1, 0, 0],
         [0, math.cos(roll), -math.sin(roll)],
@@ -78,12 +93,18 @@ def acceleration(acc_X,acc_Y, acc_Z, roll, pitch,yaw):
         [math.sin(yaw), math.cos(yaw), 0],
         [0, 0, 1]
     ])
+    R = Rz @ Ry @ Rx
+    return R
+
+
+def acceleration(acc_X,acc_Y, acc_Z, Roll, Pitch,Yaw):
     accx0=np.zeros(len(acc_X))
     accy0=np.zeros(len(acc_Y))
     accz0=np.zeros(len(acc_Z))
+    
     for i in range(len(acc_X)):
+        R=changement_de_base(Roll[i],Pitch[i],Yaw[i])
         acc = np.array([acc_X[i], acc_Y[i], acc_Z[i]])
-        R = Rz @ Ry @ Rx
         acc0 = R @ acc
         accx0[i] = acc0[0]
         accy0[i] = acc0[1]
@@ -91,7 +112,9 @@ def acceleration(acc_X,acc_Y, acc_Z, roll, pitch,yaw):
     
     return accx0, accy0, accz0
 
-acc_x, acc_y, acc_z = acceleration(acc_x, acc_y, acc_z, anglex, angley, anglez)
+acc_x1, acc_y1, acc_z1 = acceleration(acc_x1, acc_y1, acc_z1, anglex1, angley1, anglez1)
+acc_x2, acc_y2, acc_z2 = acceleration(acc_x2, acc_y2, acc_z2, anglex2, angley2, anglez2)
+acc_x3, acc_y3, acc_z3 = acceleration(acc_x3, acc_y3, acc_z3, anglex3, angley3, anglez3)
 
 def moyenne(liste):
     m = 0
@@ -100,47 +123,41 @@ def moyenne(liste):
     m /= (len(liste)-1)
     return round(m, 4)
 
-dt=moyenne(time)
+dt1=moyenne(time1)
+dt2=moyenne(time2)
+dt3=moyenne(time3)
 
 def integration(signal, dt):
     return cumtrapz(signal, dx=dt, initial=0)
+print(len(time1))
+vx1 = integration(acc_x1, dt1)
+vy1 = integration(acc_y1, dt1)
+vz1 = integration(acc_z1, dt1)
+x1 = integration(vx1, dt1)
+y1 = integration(vy1, dt1)
+z1 = integration(vz1, dt1)
 
-vx = integration(acc_x, dt)
-vy = integration(acc_y, dt)
-vz = integration(acc_z, dt)
-x = integration(vx, dt)
-y = integration(vy, dt)
-z = integration(vz, dt)
+vx2 = integration(acc_x2, dt2)
+vy2 = integration(acc_y2, dt2)  
+vz2 = integration(acc_z2, dt2)
+x2 = integration(vx2, dt2)
+y2 = integration(vy2, dt2)
+z2 = integration(vz2, dt2)
 
+vx3 = integration(acc_x3, dt3)
+vy3 = integration(acc_y3, dt3)
+vz3 = integration(acc_z3, dt3)
+x3 = integration(vx3, dt3)
+y3 = integration(vy3, dt3)
+z3 = integration(vz3, dt3)
 
 
 plt.close(1)
 plt.figure(1)
-plt.plot(time, acc_x, label="Accélération sur l'axe z")
+plt.plot(time1, acc_x1, label="Accélération sur l'axe z")
 plt.ylabel('Accélération (m/s²)')  # Titre de l'axe y
 plt.xlabel("Temps (s)")  # Titre de l'axe x
 plt.title("Accélération")  # Titre du graphique
 plt.legend()
 plt.grid(True)  # Affichage de la grille
 plt.show()  # Affichage d'une courbe
-
-
-plt.close(2)
-plt.figure(2)
-plt.plot(time, vz, label="Vitesse selon l'axe z, rect ")
-plt.ylabel('Vitesse (m/s)')  # Titre de l'axe y
-plt.xlabel("Temps (s)")  # Titre de l'axe x
-plt.title("Vitesse")  # Titre du graphique
-plt.legend()
-plt.grid(True)  # Affichage de la grille
-plt.show()
-
-plt.close(3)
-plt.figure(3)
-plt.plot(x, y, label="trajectoire y en fonction de x  ")
-plt.ylabel('position selon y en m')  # Titre de l'axe y
-plt.xlabel("position selon y en m")  # Titre de l'axe x
-plt.title("TRajectoire")  # Titre du graphique
-plt.legend()
-plt.grid(True)  # Affichage de la grille
-plt.show()

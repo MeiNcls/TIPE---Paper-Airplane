@@ -1,0 +1,18 @@
+time	DeviceName	AccX(g)	AccY(g)	AccZ(g)	AsX(°/s)	AsY(°/s)	AsZ(°/s)	AngleX(°)	AngleY(°)	AngleZ(°)	HX(uT)	HY(uT)	HZ(uT)	Q0()	Q1()	Q2()	Q3()	Temperature(°C)	Height(m)	Pressure(kPa)	Version()	Battery level(%)
+2026-06-06T20:20:47.344	WT901BLE67(38:1E:C7:E4:EA:9B)	0.898	-1.210	-0.039	0.916	-4.639	-6.775	-93.94	-27.59	27.56	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:47.408	WT901BLE67(38:1E:C7:E4:EA:9B)	0.895	-1.204	-0.072	0.610	14.648	-4.578	-93.58	-28.60	27.14	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:47.475	WT901BLE67(38:1E:C7:E4:EA:9B)	0.868	-1.210	-0.109	-9.338	22.095	-5.310	-93.64	-29.77	25.95	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:47.589	WT901BLE67(38:1E:C7:E4:EA:9B)	0.854	-1.189	-0.114	-6.287	13.977	-23.315	-93.23	-31.66	23.61	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:47.683	WT901BLE67(38:1E:C7:E4:EA:9B)	0.886	-1.188	-0.098	-9.949	35.583	-16.724	-92.45	-33.86	20.74	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:47.797	WT901BLE67(38:1E:C7:E4:EA:9B)	0.882	-1.115	-0.203	-35.828	69.153	-10.132	-92.20	-35.37	14.56	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:47.882	WT901BLE67(38:1E:C7:E4:EA:9B)	1.107	-1.097	-0.059	-43.152	80.750	-4.456	-90.79	-36.65	5.37	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:47.993	WT901BLE67(38:1E:C7:E4:EA:9B)	1.210	-1.062	-0.036	-49.927	103.088	6.348	-88.95	-36.91	-5.84	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:48.081	WT901BLE67(38:1E:C7:E4:EA:9B)	1.344	-0.929	0.086	-30.579	81.543	6.165	-86.61	-36.85	-16.29	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:48.199	WT901BLE67(38:1E:C7:E4:EA:9B)	1.539	-0.850	0.042	9.888	117.432	10.010	-80.16	-36.05	-28.36	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:48.292	WT901BLE67(38:1E:C7:E4:EA:9B)	1.840	-0.647	0.087	57.617	-14.526	-23.682	-72.15	-36.16	-34.61	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:48.399	WT901BLE67(38:1E:C7:E4:EA:9B)	2.076	-0.041	0.479	291.687	-188.110	-113.831	-67.65	-49.33	-14.87	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:48.465	WT901BLE67(38:1E:C7:E4:EA:9B)	3.780	0.615	0.794	324.829	-28.442	-209.167	-20.09	-67.82	-33.78	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:48.599	WT901BLE67(38:1E:C7:E4:EA:9B)	5.851	0.758	2.030	151.062	-93.567	236.328	-17.54	-85.53	-7.40	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:48.665	WT901BLE67(38:1E:C7:E4:EA:9B)	-0.256	-0.902	-0.309	1283.203	4.944	351.929	-2.77	-55.31	86.09	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:48.803	WT901BLE67(38:1E:C7:E4:EA:9B)	-0.128	-2.583	0.509	690.735	-121.826	-582.947	61.14	-36.98	33.59	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
+2026-06-06T20:20:48.868	WT901BLE67(38:1E:C7:E4:EA:9B)	0.217	-1.587	0.896	72.693	63.782	50.354	80.93	-34.99	38.56	null	null	null	null	null	null	null	null	null	null	10039.1.2	10
